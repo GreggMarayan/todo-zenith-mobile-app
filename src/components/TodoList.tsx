@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useTodo } from "@/context/TodoContext";
 import TodoItem from "./TodoItem";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Todo } from "@/types";
-import { Loader, Plus, Search, RefreshCw } from "lucide-react";
+import { Loader, Plus, Search, RefreshCw, Check } from "lucide-react";
 
 const TodoList: React.FC = () => {
   const { todos, getTodos, isLoading } = useTodo();
