@@ -4,7 +4,7 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  token: string;
+  token?: string;
 }
 
 export interface AuthContextType {
@@ -21,9 +21,10 @@ export interface Todo {
   id: string;
   title: string;
   description: string;
-  status: 'active' | 'completed';
+  status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
+  userId: string;
 }
 
 export interface TodoContextType {
@@ -33,30 +34,35 @@ export interface TodoContextType {
   getTodos: () => Promise<void>;
   addTodo: (title: string, description: string) => Promise<void>;
   updateTodo: (id: string, title: string, description: string) => Promise<void>;
-  toggleTodoStatus: (id: string, status: 'active' | 'completed') => Promise<void>;
+  toggleTodoStatus: (id: string, status: 'active' | 'inactive') => Promise<void>;
   deleteTodo: (id: string) => Promise<void>;
 }
 
+// API Response types matching the actual API
 export interface ApiResponse<T> {
-  success: boolean;
+  status: number;
   data?: T;
-  error?: string;
+  message: string;
+  count?: string;
 }
 
 export interface LoginResponse {
-  user: User;
-  token: string;
+  id: number;
+  fname: string;
+  lname: string;
+  email: string;
+  timemodified: string;
 }
 
-export interface SignupResponse {
-  user: User;
-  token: string;
+export interface TodoItem {
+  item_id: number;
+  item_name: string;
+  item_description: string;
+  status: 'active' | 'inactive';
+  user_id: number;
+  timemodified: string;
 }
 
 export interface TodosResponse {
-  todos: Todo[];
-}
-
-export interface TodoResponse {
-  todo: Todo;
+  [key: string]: TodoItem;
 }

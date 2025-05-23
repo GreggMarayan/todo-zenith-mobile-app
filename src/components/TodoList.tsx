@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useTodo } from "@/context/TodoContext";
 import TodoItem from "./TodoItem";
@@ -27,7 +28,7 @@ const TodoList: React.FC = () => {
     const statusMatch =
       activeTab === "all" ||
       (activeTab === "active" && todo.status === "active") ||
-      (activeTab === "completed" && todo.status === "completed");
+      (activeTab === "completed" && todo.status === "inactive");
     
     // Then filter by search query
     const searchMatch =

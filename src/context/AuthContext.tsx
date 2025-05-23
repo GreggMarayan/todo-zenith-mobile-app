@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { User, AuthContextType } from "@/types";
 import { authApi } from "@/services/api";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 // Create the context
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -45,13 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authApi.login(email, password);
       
-      if (response.success && response.data) {
+      if (response.status === 200 && response.data) {
         const userData = {
-          id: response.data.user.id,
-          firstName: response.data.user.firstName,
-          lastName: response.data.user.lastName,
-          email: response.data.user.email,
-          token: response.data.token,
+          id: response.data.id.toString(),
+          firstName: response.data.fname,
+          lastName: response.data.lname,
+          email: response.data.email,
         };
         
         setUser(userData);
@@ -60,13 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast({
           title: "Login Successful",
           description: `Welcome back, ${userData.firstName}!`,
-        });
-      } else {
-        setError(response.error || "Login failed");
-        toast({
-          title: "Login Failed",
-          description: response.error || "Invalid credentials. Please try again.",
-          variant: "destructive",
         });
       }
     } catch (err) {
@@ -90,29 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authApi.signup(firstName, lastName, email, password);
       
-      if (response.success && response.data) {
-        const userData = {
-          id: response.data.user.id,
-          firstName: response.data.user.firstName,
-          lastName: response.data.user.lastName,
-          email: response.data.user.email,
-          token: response.data.token,
-        };
-        
-        setUser(userData);
-        setIsAuthenticated(true);
-        localStorage.setItem("todo_user", JSON.stringify(userData));
+      if (response.status === 200) {
         toast({
           title: "Registration Successful",
-          description: `Welcome, ${userData.firstName}!`,
+          description: "Please login with your new account.",
         });
-      } else {
-        setError(response.error || "Registration failed");
-        toast({
-          title: "Registration Failed",
-          description: response.error || "Please try again with different information.",
-          variant: "destructive",
-        });
+        // After successful signup, automatically try to login
+        await login(email, password);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Registration failed";

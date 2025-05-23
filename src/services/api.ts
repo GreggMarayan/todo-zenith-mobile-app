@@ -1,31 +1,37 @@
 
-import { ApiResponse, LoginResponse, SignupResponse, TodoResponse, TodosResponse } from "@/types";
+import { ApiResponse, LoginResponse, TodoItem, TodosResponse } from "@/types";
 
 const BASE_URL = "https://todo-list.dcism.org";
 
 // Helper function to handle API responses
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Something went wrong");
+async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+  const data = await response.json();
+  
+  if (data.status !== 200) {
+    throw new Error(data.message || "Something went wrong");
   }
   
-  const data = await response.json();
   return data;
 }
 
 // Authentication APIs
 export const authApi = {
-  signup: async (firstName: string, lastName: string, email: string, password: string): Promise<ApiResponse<SignupResponse>> => {
+  signup: async (firstName: string, lastName: string, email: string, password: string): Promise<ApiResponse<any>> => {
     const response = await fetch(`${BASE_URL}/signup_action.php`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ firstName, lastName, email, password }),
+      body: JSON.stringify({ 
+        first_name: firstName, 
+        last_name: lastName, 
+        email, 
+        password,
+        confirm_password: password
+      }),
     });
     
-    return handleResponse<ApiResponse<SignupResponse>>(response);
+    return handleResponse<any>(response);
   },
   
   login: async (email: string, password: string): Promise<ApiResponse<LoginResponse>> => {
@@ -36,74 +42,79 @@ export const authApi = {
       },
     });
     
-    return handleResponse<ApiResponse<LoginResponse>>(response);
+    return handleResponse<LoginResponse>(response);
   },
 };
 
 // Todo APIs
 export const todoApi = {
-  getTodos: async (token: string): Promise<ApiResponse<TodosResponse>> => {
-    const response = await fetch(`${BASE_URL}/getItems_action.php`, {
+  getTodos: async (userId: string, status: 'active' | 'inactive'): Promise<ApiResponse<TodosResponse>> => {
+    const response = await fetch(`${BASE_URL}/getItems_action.php?status=${status}&user_id=${userId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
       },
     });
     
-    return handleResponse<ApiResponse<TodosResponse>>(response);
+    return handleResponse<TodosResponse>(response);
   },
   
-  addTodo: async (token: string, title: string, description: string): Promise<ApiResponse<TodoResponse>> => {
+  addTodo: async (userId: string, title: string, description: string): Promise<ApiResponse<TodoItem>> => {
     const response = await fetch(`${BASE_URL}/addItem_action.php`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ title, description }),
+      body: JSON.stringify({ 
+        item_name: title, 
+        item_description: description,
+        user_id: parseInt(userId)
+      }),
     });
     
-    return handleResponse<ApiResponse<TodoResponse>>(response);
+    return handleResponse<TodoItem>(response);
   },
   
-  updateTodo: async (token: string, id: string, title: string, description: string): Promise<ApiResponse<TodoResponse>> => {
+  updateTodo: async (id: string, title: string, description: string): Promise<ApiResponse<any>> => {
     const response = await fetch(`${BASE_URL}/editItem_action.php`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ id, title, description }),
+      body: JSON.stringify({ 
+        item_id: parseInt(id), 
+        item_name: title, 
+        item_description: description 
+      }),
     });
     
-    return handleResponse<ApiResponse<TodoResponse>>(response);
+    return handleResponse<any>(response);
   },
   
-  toggleTodoStatus: async (token: string, id: string, status: 'active' | 'completed'): Promise<ApiResponse<TodoResponse>> => {
+  toggleTodoStatus: async (id: string, status: 'active' | 'inactive'): Promise<ApiResponse<any>> => {
     const response = await fetch(`${BASE_URL}/statusItem_action.php`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify({ 
+        item_id: parseInt(id), 
+        status 
+      }),
     });
     
-    return handleResponse<ApiResponse<TodoResponse>>(response);
+    return handleResponse<any>(response);
   },
   
-  deleteTodo: async (token: string, id: string): Promise<ApiResponse<{}>> => {
-    const response = await fetch(`${BASE_URL}/deleteItem_action.php`, {
+  deleteTodo: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await fetch(`${BASE_URL}/deleteItem_action.php?item_id=${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ id }),
     });
     
-    return handleResponse<ApiResponse<{}>>(response);
+    return handleResponse<any>(response);
   },
 };
 

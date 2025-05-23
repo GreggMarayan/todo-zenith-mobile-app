@@ -14,10 +14,10 @@ interface TodoItemProps {
 const TodoItem: React.FC<TodoItemProps> = ({ todo, onEdit }) => {
   const { toggleTodoStatus, deleteTodo, isLoading } = useTodo();
   
-  const isCompleted = todo.status === "completed";
+  const isCompleted = todo.status === "inactive";
   
   const handleToggleStatus = () => {
-    toggleTodoStatus(todo.id, isCompleted ? "active" : "completed");
+    toggleTodoStatus(todo.id, isCompleted ? "active" : "inactive");
   };
   
   const handleDelete = () => {

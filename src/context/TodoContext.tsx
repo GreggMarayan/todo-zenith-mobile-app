@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { Todo, TodoContextType } from "@/types";
 import { todoApi } from "@/services/api";
 import { useAuth } from "./AuthContext";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 // Create the context
 const TodoContext = createContext<TodoContextType | null>(null);
@@ -30,26 +30,48 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isAuthenticated, user]);
 
-  // Get all todos
+  // Helper function to transform API todo to our Todo type
+  const transformApiTodo = (apiTodo: any): Todo => ({
+    id: apiTodo.item_id.toString(),
+    title: apiTodo.item_name,
+    description: apiTodo.item_description,
+    status: apiTodo.status,
+    createdAt: apiTodo.timemodified,
+    updatedAt: apiTodo.timemodified,
+    userId: apiTodo.user_id.toString(),
+  });
+
+  // Get all todos (both active and inactive)
   const getTodos = async () => {
-    if (!user?.token) return;
+    if (!user?.id) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await todoApi.getTodos(user.token);
+      // Fetch both active and inactive todos
+      const [activeResponse, inactiveResponse] = await Promise.all([
+        todoApi.getTodos(user.id, 'active'),
+        todoApi.getTodos(user.id, 'inactive')
+      ]);
       
-      if (response.success && response.data) {
-        setTodos(response.data.todos);
-      } else {
-        setError(response.error || "Failed to fetch todos");
-        toast({
-          title: "Error",
-          description: response.error || "Failed to fetch todos",
-          variant: "destructive",
+      const allTodos: Todo[] = [];
+      
+      // Process active todos
+      if (activeResponse.status === 200 && activeResponse.data) {
+        Object.values(activeResponse.data).forEach(todo => {
+          allTodos.push(transformApiTodo(todo));
         });
       }
+      
+      // Process inactive todos  
+      if (inactiveResponse.status === 200 && inactiveResponse.data) {
+        Object.values(inactiveResponse.data).forEach(todo => {
+          allTodos.push(transformApiTodo(todo));
+        });
+      }
+      
+      setTodos(allTodos);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch todos";
       setError(errorMessage);
@@ -65,26 +87,20 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Add a new todo
   const addTodo = async (title: string, description: string) => {
-    if (!user?.token) return;
+    if (!user?.id) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await todoApi.addTodo(user.token, title, description);
+      const response = await todoApi.addTodo(user.id, title, description);
       
-      if (response.success && response.data) {
-        setTodos([...todos, response.data.todo]);
+      if (response.status === 200 && response.data) {
+        const newTodo = transformApiTodo(response.data);
+        setTodos([...todos, newTodo]);
         toast({
           title: "Success",
           description: "Todo added successfully",
-        });
-      } else {
-        setError(response.error || "Failed to add todo");
-        toast({
-          title: "Error",
-          description: response.error || "Failed to add todo",
-          variant: "destructive",
         });
       }
     } catch (err) {
@@ -102,30 +118,21 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update an existing todo
   const updateTodo = async (id: string, title: string, description: string) => {
-    if (!user?.token) return;
-    
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await todoApi.updateTodo(user.token, id, title, description);
+      const response = await todoApi.updateTodo(id, title, description);
       
-      if (response.success && response.data) {
+      if (response.status === 200) {
         setTodos(
           todos.map((todo) =>
-            todo.id === id ? response.data.todo : todo
+            todo.id === id ? { ...todo, title, description } : todo
           )
         );
         toast({
           title: "Success",
           description: "Todo updated successfully",
-        });
-      } else {
-        setError(response.error || "Failed to update todo");
-        toast({
-          title: "Error",
-          description: response.error || "Failed to update todo",
-          variant: "destructive",
         });
       }
     } catch (err) {
@@ -142,31 +149,22 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Toggle todo status
-  const toggleTodoStatus = async (id: string, status: 'active' | 'completed') => {
-    if (!user?.token) return;
-    
+  const toggleTodoStatus = async (id: string, status: 'active' | 'inactive') => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await todoApi.toggleTodoStatus(user.token, id, status);
+      const response = await todoApi.toggleTodoStatus(id, status);
       
-      if (response.success && response.data) {
+      if (response.status === 200) {
         setTodos(
           todos.map((todo) =>
-            todo.id === id ? response.data.todo : todo
+            todo.id === id ? { ...todo, status } : todo
           )
         );
         toast({
           title: "Success",
           description: `Todo marked as ${status}`,
-        });
-      } else {
-        setError(response.error || "Failed to update todo status");
-        toast({
-          title: "Error",
-          description: response.error || "Failed to update todo status",
-          variant: "destructive",
         });
       }
     } catch (err) {
@@ -184,26 +182,17 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Delete a todo
   const deleteTodo = async (id: string) => {
-    if (!user?.token) return;
-    
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await todoApi.deleteTodo(user.token, id);
+      const response = await todoApi.deleteTodo(id);
       
-      if (response.success) {
+      if (response.status === 200) {
         setTodos(todos.filter((todo) => todo.id !== id));
         toast({
           title: "Success",
           description: "Todo deleted successfully",
-        });
-      } else {
-        setError(response.error || "Failed to delete todo");
-        toast({
-          title: "Error",
-          description: response.error || "Failed to delete todo",
-          variant: "destructive",
         });
       }
     } catch (err) {
