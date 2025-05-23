@@ -27,7 +27,11 @@ export const authApi = {
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Accept",
         },
+        mode: "cors",
         body: JSON.stringify({ 
           first_name: firstName, 
           last_name: lastName, 
@@ -37,10 +41,21 @@ export const authApi = {
         }),
       });
       
-      return handleResponse<any>(response);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Signup response error:", errorText);
+        throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Signup response data:", data);
+      return data;
     } catch (error) {
       console.error("Signup API error:", error);
-      throw new Error("Network error. Please check your connection and try again.");
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        throw new Error("Unable to connect to the server. Please check your internet connection and try again.");
+      }
+      throw error instanceof Error ? error : new Error("Registration failed. Please try again.");
     }
   },
   
@@ -51,13 +66,28 @@ export const authApi = {
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Accept",
         },
+        mode: "cors",
       });
       
-      return handleResponse<LoginResponse>(response);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Login response error:", errorText);
+        throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Login response data:", data);
+      return data;
     } catch (error) {
       console.error("Login API error:", error);
-      throw new Error("Network error. Please check your connection and try again.");
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        throw new Error("Unable to connect to the server. Please check your internet connection and try again.");
+      }
+      throw error instanceof Error ? error : new Error("Login failed. Please try again.");
     }
   },
 };
@@ -72,6 +102,7 @@ export const todoApi = {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
+        mode: "cors",
       });
       
       return handleResponse<TodosResponse>(response);
@@ -89,6 +120,7 @@ export const todoApi = {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
+        mode: "cors",
         body: JSON.stringify({ 
           item_name: title, 
           item_description: description,
@@ -111,6 +143,7 @@ export const todoApi = {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
+        mode: "cors",
         body: JSON.stringify({ 
           item_id: parseInt(id), 
           item_name: title, 
@@ -133,6 +166,7 @@ export const todoApi = {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
+        mode: "cors",
         body: JSON.stringify({ 
           item_id: parseInt(id), 
           status 
@@ -154,6 +188,7 @@ export const todoApi = {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
+        mode: "cors",
       });
       
       return handleResponse<any>(response);

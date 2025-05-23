@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { User, AuthContextType } from "@/types";
 import { authApi } from "@/services/api";
@@ -97,8 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Registration Successful",
           description: "Account created successfully! You can now login.",
         });
-        
-        // Don't auto-login after signup, let user manually login
         return;
       } else {
         throw new Error(response.message || "Registration failed");
