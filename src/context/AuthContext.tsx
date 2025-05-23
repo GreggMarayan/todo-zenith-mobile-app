@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
+        console.log("Found saved user:", parsedUser);
         setUser(parsedUser);
         setIsAuthenticated(true);
       } catch (err) {
@@ -39,11 +40,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Login function
   const login = async (email: string, password: string) => {
+    console.log("Login attempt for:", email);
     setIsLoading(true);
     setError(null);
     
     try {
       const response = await authApi.login(email, password);
+      console.log("Login response:", response);
       
       if (response.status === 200 && response.data) {
         const userData = {
@@ -53,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: response.data.email,
         };
         
+        console.log("Setting user data:", userData);
         setUser(userData);
         setIsAuthenticated(true);
         localStorage.setItem("todo_user", JSON.stringify(userData));
@@ -60,15 +64,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Login Successful",
           description: `Welcome back, ${userData.firstName}!`,
         });
+      } else {
+        throw new Error(response.message || "Login failed");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Login failed";
+      console.error("Login error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Login failed. Please try again.";
       setError(errorMessage);
       toast({
         title: "Login Failed",
         description: errorMessage,
         variant: "destructive",
       });
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -76,28 +84,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Signup function
   const signup = async (firstName: string, lastName: string, email: string, password: string) => {
+    console.log("Signup attempt for:", email);
     setIsLoading(true);
     setError(null);
     
     try {
       const response = await authApi.signup(firstName, lastName, email, password);
+      console.log("Signup response:", response);
       
       if (response.status === 200) {
         toast({
           title: "Registration Successful",
-          description: "Please login with your new account.",
+          description: "Account created successfully! You can now login.",
         });
-        // After successful signup, automatically try to login
-        await login(email, password);
+        
+        // Don't auto-login after signup, let user manually login
+        return;
+      } else {
+        throw new Error(response.message || "Registration failed");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Registration failed";
+      console.error("Signup error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Registration failed. Please try again.";
       setError(errorMessage);
       toast({
         title: "Registration Failed",
         description: errorMessage,
         variant: "destructive",
       });
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -105,8 +120,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = () => {
+    console.log("Logging out user");
     setUser(null);
     setIsAuthenticated(false);
+    setError(null);
     localStorage.removeItem("todo_user");
     toast({
       title: "Logged Out",
