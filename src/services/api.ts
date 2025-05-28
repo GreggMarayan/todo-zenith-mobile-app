@@ -1,4 +1,5 @@
 import { ApiResponse, LoginResponse, TodoItem, TodosResponse } from "@/types";
+import { getUniqPayload } from "recharts/types/util/payload/getUniqPayload";
 
 const BASE_URL = "https://todo-list.dcism.org";
 
@@ -29,10 +30,14 @@ export const authApi = {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Accept": "application/json"
         },
-        mode: "cors",
-        body: params.toString()
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          password: password,
+          confirm_password: password
+        }),
       });
       return await handleResponse<any>(response);
     } catch (err) {
@@ -93,14 +98,18 @@ export const todoApi = {
     params.append("user_id", userId);
 
     try {
+      const payload = {
+        item_name: params.get("item_name")?.trim() || "",
+        item_description: params.get("item_description")?.trim() || "",
+        user_id: params.get("user_id") || ""
+      };
+      
       const response = await fetch(`${BASE_URL}/addItem_action.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Accept": "application/json"
         },
-        mode: "cors",
-        body: params.toString()
+        body: JSON.stringify(payload),
       });
       return await handleResponse<TodoItem>(response);
     } catch {
@@ -119,14 +128,18 @@ export const todoApi = {
     params.append("item_description", description);
 
     try {
+
+      const payload = {
+        item_id: params.get("item_id") || "",
+        item_name: params.get("item_name")?.trim() || "",
+        item_description: params.get("item_description")?.trim() || ""
+      };
       const response = await fetch(`${BASE_URL}/editItem_action.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Accept": "application/json"
         },
-        mode: "cors",
-        body: params.toString()
+        body: JSON.stringify(payload)
       });
       return await handleResponse<any>(response);
     } catch {
@@ -143,14 +156,18 @@ export const todoApi = {
     params.append("status", status);
 
     try {
+      const payload = {
+        item_id: params.get("item_id") || "",
+        status: params.get("status") || ""
+      };
+
       const response = await fetch(`${BASE_URL}/statusItem_action.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Accept": "application/json"
         },
         mode: "cors",
-        body: params.toString()
+        body: JSON.stringify(payload)
       });
       return await handleResponse<any>(response);
     } catch {
